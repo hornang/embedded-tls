@@ -78,6 +78,7 @@ pub use rand_core::{CryptoRng, CryptoRngCore};
 
 #[cfg(feature = "webpki")]
 pub mod webpki;
+mod certificate;
 
 mod asynch;
 pub use asynch::*;

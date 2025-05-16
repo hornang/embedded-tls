@@ -1,5 +1,5 @@
 use crate::TlsError;
-use crate::certificate::ParsedCertificate;
+use crate::certificate::{ParsedCertificate, TbsCertificate};
 use crate::config::{Certificate, TlsCipherSuite, TlsClock, TlsVerifier};
 use crate::extensions::extension_data::signature_algorithms::SignatureScheme;
 use crate::handshake::{
@@ -153,7 +153,7 @@ fn der_read_length(data: &[u8], offset: usize) -> Option<(usize, usize)> {
 fn get_tbs_certificate_portion(data: &[u8]) -> Option<&[u8]> {
     let mut offset = 0;
 
-    // Outer SEQUENCE (Certificate)
+    /* // Outer SEQUENCE (Certificate)
     if *data.get(offset)? != 0x30 {
         return None;
     }
@@ -161,7 +161,7 @@ fn get_tbs_certificate_portion(data: &[u8]) -> Option<&[u8]> {
     let cert_value_start = offset + 1 + cert_len_len;
     // No need to check cert_value_end
 
-    offset = cert_value_start;
+    offset = cert_value_start; */
 
     // tbsCertificate (SEQUENCE)
     if *data.get(offset)? != 0x30 {
@@ -219,7 +219,9 @@ fn verify_certificate(
             )
             .map_err(|_| TlsError::ParseError(ParseError::InvalidData))?;
 
-            let tbs_der = get_tbs_certificate_portion(certificate).ok_or(TlsError::DecodeError)?;
+            use der::asn1::SequenceRef;
+            let seq = SequenceRef::from_der(certificate).map_err(|e| TlsError::DecodeError)?;
+            let tbs_der = get_tbs_certificate_portion(seq.as_bytes()).ok_or(TlsError::DecodeError)?;
 
             if verifying_key.verify(&tbs_der, &signature).is_ok() {
                 println!("Looks like it was OK!");
